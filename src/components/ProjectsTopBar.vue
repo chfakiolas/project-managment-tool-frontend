@@ -11,7 +11,7 @@
         v-model="searchQuery"
         dense
         standout
-        placeholder="Search in projects..."
+        :placeholder="searchPlaceholder"
         class="search-input q-mx-md"
         style="min-width: 400px"
         @update:model-value="handleSearch"
@@ -27,8 +27,20 @@
 
       <q-space />
 
+      <!-- Navigation Buttons -->
+      <q-btn
+        v-if="showDeletedButton"
+        flat
+        label="Deleted Projects"
+        icon="delete_sweep"
+        color="grey-7"
+        @click="$router.push('/deleted')"
+        class="q-mr-sm"
+      />
+
       <!-- Create Project Button -->
       <q-btn
+        v-if="showCreateButton"
         unelevated
         color="primary"
         label="New Project"
@@ -146,6 +158,22 @@ import { ref } from 'vue'
 import { api } from 'boot/axios'
 // import { useQuasar } from 'quasar'
 import { Notify } from 'quasar'
+
+defineProps({
+  showCreateButton: {
+    type: Boolean,
+    default: true,
+  },
+  showDeletedButton: {
+    type: Boolean,
+    default: true,
+  },
+  searchPlaceholder: {
+    type: String,
+    default: 'Search in projects...',
+  },
+})
+
 const emit = defineEmits(['search', 'project-created'])
 
 // const $q = useQuasar()
