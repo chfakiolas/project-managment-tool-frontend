@@ -38,15 +38,15 @@
                 <div class="text-h6 text-weight-bold q-mb-md">Progress</div>
                 <q-linear-progress
                   size="30px"
-                  :value="project.progress / 100"
-                  :color="getProgressColor(project.progress)"
+                  :value="localProgress / 100"
+                  :color="getProgressColor(localProgress)"
                   rounded
                 >
                   <div class="absolute-full flex flex-center">
                     <q-badge
-                      :color="getProgressColor(project.progress)"
+                      :color="getProgressColor(localProgress)"
                       text-color="white"
-                      :label="`${project.progress}%`"
+                      :label="`${localProgress}%`"
                     />
                   </div>
                 </q-linear-progress>
@@ -54,43 +54,24 @@
               <div class="col-12 col-sm-6">
                 <div class="text-h6 text-weight-bold q-mb-md">Health Status</div>
                 <q-chip
-                  :color="getHealthColor(project.health)"
+                  :color="getHealthColor(localHealth)"
                   text-color="white"
-                  :label="project.health"
+                  :label="localHealth"
                   size="lg"
                   icon="favorite"
                 />
               </div>
             </div>
 
-            <!-- Milestones Progress -->
+            <!-- Milestones Management -->
             <div class="q-mb-lg">
-              <div class="text-h6 text-weight-bold q-mb-md">Milestones Progress</div>
-              <div v-if="project.milestones && project.milestones.length > 0">
-                <div
-                  v-for="milestone in project.milestones"
-                  :key="milestone.id"
-                  class="milestone-item q-mb-sm"
-                >
-                  <div class="row items-center">
-                    <div class="col">
-                      <div class="text-body1">{{ milestone.name }}</div>
-                      <div class="text-caption text-grey-6" v-if="milestone.due_date">
-                        Due: {{ formatDate(milestone.due_date) }}
-                      </div>
-                    </div>
-                    <div class="col-auto">
-                      <q-chip
-                        :color="milestone.completed ? 'positive' : 'grey-5'"
-                        text-color="white"
-                        :label="milestone.completed ? 'Completed' : 'Pending'"
-                        :icon="milestone.completed ? 'check_circle' : 'schedule'"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="text-grey-6">No milestones defined</div>
+              <milestone-manager
+                :project-id="project.id"
+                :milestones="localMilestones"
+                @milestone-created="handleMilestoneCreated"
+                @milestone-updated="handleMilestoneUpdated"
+                @milestone-deleted="handleMilestoneDeleted"
+              />
             </div>
 
             <!-- Tags -->
@@ -209,6 +190,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import MilestoneManager from './MilestoneManager.vue'
 // import { Notify } from 'quasar'
 
 const props = defineProps({
@@ -223,6 +205,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:show', 'edit-project', 'delete-project'])
+
+// Create reactive references for milestones to avoid mutating props
+const localMilestones = ref([...(props.project.milestones || [])])
+const localProgress = ref(props.project.progress)
+const localHealth = ref(props.project.health)
 
 // Mock data for team roster
 const teamMembers = ref([
@@ -317,6 +304,64 @@ const editProject = () => {
 const deleteProject = () => {
   emit('delete-project', props.project)
   emit('update:show', false)
+}
+
+// Milestone event handlers
+const handleMilestoneCreated = (milestone) => {
+  // Add milestone to local milestones array
+  localMilestones.value.push(milestone)
+
+  // Update project progress and health
+  updateProjectMetrics()
+}
+
+const handleMilestoneUpdated = (updatedMilestone) => {
+  // Update milestone in local milestones array
+  const index = localMilestones.value.findIndex((m) => m.id === updatedMilestone.id)
+  if (index !== -1) {
+    localMilestones.value[index] = updatedMilestone
+  }
+
+  // Update project progress and health
+  updateProjectMetrics()
+}
+
+const handleMilestoneDeleted = (milestoneId) => {
+  // Remove milestone from local milestones array
+  const index = localMilestones.value.findIndex((m) => m.id === milestoneId)
+  if (index !== -1) {
+    localMilestones.value.splice(index, 1)
+  }
+
+  // Update project progress and health
+  updateProjectMetrics()
+}
+
+const updateProjectMetrics = () => {
+  // Calculate new progress and health based on local milestones
+  const totalMilestones = localMilestones.value.length
+  const completedMilestones = localMilestones.value.filter((m) => m.completed).length
+
+  if (totalMilestones > 0) {
+    localProgress.value = Math.round((completedMilestones / totalMilestones) * 100)
+  } else {
+    localProgress.value = 0
+  }
+
+  // Update health based on progress and overdue milestones
+  const overdueCount = localMilestones.value.filter((m) => m.is_overdue).length
+
+  if (localProgress.value >= 90 && overdueCount === 0) {
+    localHealth.value = 'good'
+  } else if (localProgress.value >= 70 && overdueCount <= 1) {
+    localHealth.value = 'good'
+  } else if (localProgress.value >= 50 && overdueCount <= 2) {
+    localHealth.value = 'warning'
+  } else if (localProgress.value >= 30 && overdueCount <= 3) {
+    localHealth.value = 'warning'
+  } else {
+    localHealth.value = 'critical'
+  }
 }
 </script>
 
