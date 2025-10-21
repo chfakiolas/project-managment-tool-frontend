@@ -188,7 +188,7 @@ const handleSearch = (value) => {
 
 const clearSearch = () => {
   searchQuery.value = ''
-  emit('search', '')
+  emit('clear-search')
 }
 
 const resetForm = () => {
