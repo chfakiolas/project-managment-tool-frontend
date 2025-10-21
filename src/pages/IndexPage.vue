@@ -6,6 +6,39 @@
       @clear-search="handleClearSearch"
     />
 
+    <!-- Bulk Actions Bar -->
+    <q-slide-transition>
+      <div v-if="selectedProjects.length > 0" class="q-mb-md">
+        <q-banner class="bg-primary text-white" rounded>
+          <template v-slot:avatar>
+            <q-icon name="check_circle" color="white" />
+          </template>
+          <div class="row items-center">
+            <div class="col">
+              <strong>{{ selectedProjects.length }}</strong> project(s) selected
+            </div>
+            <div class="col-auto">
+              <q-btn
+                flat
+                label="Bulk Edit"
+                icon="edit"
+                color="white"
+                @click="showBulkEditDialog = true"
+                class="q-mr-sm"
+              />
+              <q-btn
+                flat
+                label="Clear Selection"
+                icon="clear"
+                color="white"
+                @click="clearSelection"
+              />
+            </div>
+          </div>
+        </q-banner>
+      </div>
+    </q-slide-transition>
+
     <div class="row">
       <!-- Filters -->
       <div class="col-12 q-mb-md">
@@ -91,6 +124,28 @@
       </div>
     </div>
 
+    <!-- Bulk Selection Controls -->
+    <div class="row" v-if="!loading && projects.length > 0">
+      <div class="col-12 q-mb-md">
+        <q-btn
+          flat
+          :label="selectionMode ? 'Exit Selection Mode' : 'Select Projects'"
+          :icon="selectionMode ? 'close' : 'checklist'"
+          color="primary"
+          @click="toggleSelectionMode"
+        />
+        <q-btn
+          v-if="selectionMode"
+          flat
+          label="Select All"
+          icon="select_all"
+          color="primary"
+          @click="selectAll"
+          class="q-ml-sm"
+        />
+      </div>
+    </div>
+
     <div class="row">
       <!-- Loading State -->
       <div class="col-12" v-if="loading">
@@ -100,14 +155,27 @@
 
       <!-- Projects Grid -->
       <div class="col-12 projects-container" v-else-if="projects.length > 0">
-        <project-card
+        <div
           v-for="project in projects"
           :key="project.id"
-          :project="project"
-          @view-detail="handleViewDetail"
-          @edit-project="handleEditProject"
-          @delete-project="handleDeleteProject"
-        />
+          class="project-card-wrapper"
+          :class="{ 'selection-mode': selectionMode }"
+        >
+          <q-checkbox
+            v-if="selectionMode"
+            v-model="selectedProjects"
+            :val="project.id"
+            class="project-checkbox"
+            color="primary"
+          />
+          <project-card
+            :project="project"
+            :class="{ selected: selectedProjects.includes(project.id) }"
+            @view-detail="handleViewDetail"
+            @edit-project="handleEditProject"
+            @delete-project="handleDeleteProject"
+          />
+        </div>
       </div>
 
       <!-- No Results -->
@@ -155,6 +223,79 @@
       @update:show="showProjectEdit = $event"
       @project-updated="handleProjectUpdated"
     />
+
+    <!-- Bulk Edit Dialog -->
+    <q-dialog v-model="showBulkEditDialog" persistent>
+      <q-card style="min-width: 500px">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Bulk Edit Projects</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section>
+          <div class="text-body2 q-mb-md">
+            Editing <strong>{{ selectedProjects.length }}</strong> project(s)
+          </div>
+
+          <q-form @submit.prevent="handleBulkUpdate" class="q-gutter-md">
+            <!-- Bulk Status Update -->
+            <q-select
+              v-model="bulkEditData.status"
+              label="Update Status (optional)"
+              outlined
+              clearable
+              :options="statusOptions"
+              emit-value
+              map-options
+              hint="Leave empty to keep current values"
+            >
+              <template v-slot:prepend>
+                <q-icon name="flag" />
+              </template>
+            </q-select>
+
+            <!-- Bulk Tags Update -->
+            <q-select
+              v-model="bulkEditData.tags"
+              label="Add Tags (optional)"
+              outlined
+              multiple
+              use-chips
+              use-input
+              input-debounce="0"
+              new-value-mode="add-unique"
+              hint="Tags will be added to existing tags"
+              :options="tagOptions"
+            >
+              <template v-slot:prepend>
+                <q-icon name="label" />
+              </template>
+            </q-select>
+
+            <q-banner class="bg-info text-white" rounded dense>
+              <template v-slot:avatar>
+                <q-icon name="info" color="white" />
+              </template>
+              Only filled fields will be updated. Empty fields will preserve existing values.
+            </q-banner>
+
+            <div class="row q-mt-md">
+              <q-space />
+              <q-btn flat label="Cancel" color="grey-7" v-close-popup class="q-mr-sm" />
+              <q-btn
+                unelevated
+                label="Update Projects"
+                type="submit"
+                color="primary"
+                :loading="bulkUpdating"
+                :disable="!bulkEditData.status && bulkEditData.tags.length === 0"
+              />
+            </div>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -193,6 +334,16 @@ const {
 const showProjectDetail = ref(false)
 const showProjectEdit = ref(false)
 const selectedProject = ref(null)
+
+// Bulk edit state
+const selectionMode = ref(false)
+const selectedProjects = ref([])
+const showBulkEditDialog = ref(false)
+const bulkUpdating = ref(false)
+const bulkEditData = ref({
+  status: null,
+  tags: [],
+})
 
 // Options for filters
 const statusOptions = [
@@ -289,6 +440,94 @@ const handleProjectUpdated = (updatedProject) => {
   showProjectEdit.value = false
 }
 
+// Bulk operations
+const toggleSelectionMode = () => {
+  selectionMode.value = !selectionMode.value
+  if (!selectionMode.value) {
+    selectedProjects.value = []
+  }
+}
+
+const selectAll = () => {
+  selectedProjects.value = projects.value.map((p) => p.id)
+}
+
+const clearSelection = () => {
+  selectedProjects.value = []
+}
+
+const handleBulkUpdate = async () => {
+  if (selectedProjects.value.length === 0) {
+    Notify.create({
+      type: 'warning',
+      message: 'No projects selected',
+      icon: 'warning',
+      position: 'top',
+    })
+    return
+  }
+
+  if (!bulkEditData.value.status && bulkEditData.value.tags.length === 0) {
+    Notify.create({
+      type: 'warning',
+      message: 'Please select at least one field to update',
+      icon: 'warning',
+      position: 'top',
+    })
+    return
+  }
+
+  bulkUpdating.value = true
+
+  try {
+    // Prepare the update data
+    const updateData = {
+      ids: selectedProjects.value,
+    }
+
+    if (bulkEditData.value.status) {
+      updateData.status = bulkEditData.value.status
+    }
+
+    if (bulkEditData.value.tags.length > 0) {
+      updateData.tags = bulkEditData.value.tags
+    }
+
+    // Call the bulk update endpoint
+    const response = await api.post('/projects/bulk_update/', updateData)
+
+    Notify.create({
+      type: 'positive',
+      message: `Successfully updated ${response.data.updated || selectedProjects.value.length} project(s)!`,
+      icon: 'check_circle',
+      position: 'top',
+    })
+
+    // Refresh the projects list
+    await fetchProjects()
+
+    // Reset state
+    showBulkEditDialog.value = false
+    bulkEditData.value = {
+      status: null,
+      tags: [],
+    }
+    clearSelection()
+    selectionMode.value = false
+  } catch (error) {
+    console.error('Error updating projects:', error)
+
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.message || 'Failed to update projects',
+      icon: 'error',
+      position: 'top',
+    })
+  } finally {
+    bulkUpdating.value = false
+  }
+}
+
 // Load projects on mount
 onMounted(() => {
   fetchProjects()
@@ -304,6 +543,28 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.project-card-wrapper {
+  position: relative;
+  transition: all 0.2s ease;
+
+  &.selection-mode {
+    padding-left: 40px;
+  }
+
+  .project-checkbox {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+  }
+
+  :deep(.project-card.selected) {
+    border: 2px solid var(--q-primary);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+  }
 }
 
 // Quick filters styling
