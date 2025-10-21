@@ -1,24 +1,8 @@
 <template>
-  <q-page class="flex flex-center">
-    <!-- <img
-      alt="Quasar logo"
-      src="~assets/quasar-logo-vertical.svg"
-      style="width: 200px; height: 200px"
-    /> -->
-
+  <q-page class="flex q-pa-xl">
     <div class="row">
-      <div class="col-12 projects-container" v-if="totalProjects && totalProjects > 0">
-        <q-card flat bordered class="my-card" v-for="project in projects" :key="project.id">
-          <q-card-section>
-            <div class="text-h6">{{ project.title }}</div>
-          </q-card-section>
-
-          <q-separator inset />
-
-          <q-card-section class="q-pt-none">
-            {{ project.description }}
-          </q-card-section>
-        </q-card>
+      <div class="col-12 projects-container q-pa-xl" v-if="totalProjects && totalProjects > 0">
+        <project-card v-for="project in projects" :key="project.id" :project="project" />
       </div>
       <div class="col-12" v-else>There are no projects yet</div>
       <div class="col-12">
@@ -32,6 +16,7 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { api } from 'src/boot/axios'
+import ProjectCard from 'src/components/ProjectCard.vue'
 
 const projects = ref([])
 const totalProjects = ref(null)
@@ -56,7 +41,7 @@ onMounted(() => {
 <style lang="scss" scoped>
 .my-card {
   width: 100%;
-  max-width: 250px;
+  max-width: 350px;
 }
 .projects-container {
   display: flex;
