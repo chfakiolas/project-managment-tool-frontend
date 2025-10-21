@@ -6,13 +6,13 @@
       @clear-search="handleClearSearch"
     />
 
-    <!-- Search Filters -->
+    <!-- Filters -->
     <div class="col-12 q-mb-md">
       <q-expansion-item
         icon="filter_list"
-        label="Advanced Filters"
+        label="Filters"
         class="q-mb-md"
-        v-if="hasActiveFilters || isSearching"
+        :class="{ 'text-primary': hasActiveFilters }"
       >
         <div class="q-pa-md">
           <div class="row q-gutter-md">
@@ -221,5 +221,19 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+// Quick filters styling
+.q-btn {
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+// Active filter indicator
+.text-primary {
+  font-weight: 600;
 }
 </style>
