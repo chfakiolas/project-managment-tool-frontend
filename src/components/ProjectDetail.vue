@@ -195,7 +195,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import MilestoneManager from './MilestoneManager.vue'
 // import { Notify } from 'quasar'
 
@@ -216,6 +216,19 @@ const emit = defineEmits(['update:show', 'edit-project', 'delete-project'])
 const localMilestones = ref([...(props.project.milestones || [])])
 const localProgress = ref(props.project.progress)
 const localHealth = ref(props.project.health)
+
+// Watch for project changes to update local state
+watch(
+  () => props.project,
+  (newProject) => {
+    if (newProject) {
+      localMilestones.value = [...(newProject.milestones || [])]
+      localProgress.value = newProject.progress
+      localHealth.value = newProject.health
+    }
+  },
+  { deep: true },
+)
 
 // Mock data for team roster
 const teamMembers = ref([
