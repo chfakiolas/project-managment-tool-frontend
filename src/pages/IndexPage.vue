@@ -1,5 +1,6 @@
 <template>
   <q-page class="flex q-pa-xl">
+    <projects-top-bar @project-created="loadProjects" />
     <div class="row">
       <div class="col-12 projects-container q-pa-xl" v-if="totalProjects && totalProjects > 0">
         <project-card v-for="project in projects" :key="project.id" :project="project" />
@@ -17,6 +18,7 @@
 import { onMounted, ref } from 'vue'
 import { api } from 'src/boot/axios'
 import ProjectCard from 'src/components/ProjectCard.vue'
+import ProjectsTopBar from 'src/components/ProjectsTopBar.vue'
 
 const projects = ref([])
 const totalProjects = ref(null)
@@ -42,9 +44,11 @@ onMounted(() => {
 .my-card {
   width: 100%;
   max-width: 350px;
+  min-width: 300px;
 }
 .projects-container {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 </style>
