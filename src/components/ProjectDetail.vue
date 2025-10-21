@@ -175,11 +175,11 @@
       <!-- Actions -->
       <q-card-actions align="right" class="q-pa-lg">
         <q-btn flat label="Close" color="grey-7" v-close-popup />
-        <q-btn 
-          unelevated 
-          label="Edit Project" 
-          color="primary" 
-          icon="edit" 
+        <q-btn
+          unelevated
+          label="Edit Project"
+          color="primary"
+          icon="edit"
           @click.stop="editProject"
         />
         <q-btn
