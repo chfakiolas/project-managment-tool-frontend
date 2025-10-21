@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered class="my-card">
+  <q-card flat bordered class="my-card project-card" @click="openProjectDetail">
     <q-card-section>
       <div class="row items-start">
         <div class="col">
@@ -77,15 +77,63 @@
         Updated {{ formatDate(project.last_updated) }}
       </div>
     </q-card-section>
+
+    <!-- Action Buttons -->
+    <q-card-actions align="right" class="q-pa-md">
+      <q-btn
+        flat
+        round
+        icon="edit"
+        color="primary"
+        size="sm"
+        @click.stop="editProject"
+        title="Edit Project"
+      />
+      <q-btn
+        flat
+        round
+        icon="delete"
+        color="negative"
+        size="sm"
+        @click.stop="deleteProject"
+        title="Delete Project"
+      />
+      <q-btn
+        flat
+        round
+        icon="visibility"
+        color="info"
+        size="sm"
+        @click.stop="openProjectDetail"
+        title="View Details"
+      />
+    </q-card-actions>
   </q-card>
 </template>
 <script setup>
-defineProps({
+// import { Notify } from 'quasar'
+
+const props = defineProps({
   project: {
     type: Object,
     required: true,
   },
 })
+
+const emit = defineEmits(['view-detail', 'edit-project', 'delete-project'])
+
+// Event handlers
+const openProjectDetail = () => {
+  emit('view-detail', props.project)
+}
+
+const editProject = () => {
+  emit('edit-project', props.project)
+}
+
+const deleteProject = () => {
+  emit('delete-project', props.project)
+}
 
 // Helper functions for styling
 const getStatusColor = (status) => {
@@ -125,3 +173,24 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString()
 }
 </script>
+
+<style scoped>
+.project-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.q-card-actions {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.project-card:hover .q-card-actions {
+  opacity: 1;
+}
+</style>

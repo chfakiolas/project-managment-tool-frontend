@@ -98,7 +98,14 @@
 
       <!-- Projects Grid -->
       <div class="col-12 projects-container q-pa-xl" v-else-if="projects.length > 0">
-        <project-card v-for="project in projects" :key="project.id" :project="project" />
+        <project-card
+          v-for="project in projects"
+          :key="project.id"
+          :project="project"
+          @view-detail="handleViewDetail"
+          @edit-project="handleEditProject"
+          @delete-project="handleDeleteProject"
+        />
       </div>
 
       <!-- No Results -->
@@ -127,14 +134,37 @@
         </div>
       </div>
     </div>
+
+    <!-- Project Detail Modal -->
+    <project-detail
+      v-if="selectedProject"
+      :project="selectedProject"
+      :show="showProjectDetail"
+      @update:show="showProjectDetail = $event"
+      @edit-project="handleEditProject"
+      @delete-project="handleDeleteProject"
+    />
+
+    <!-- Project Edit Modal -->
+    <project-edit
+      v-if="selectedProject"
+      :project="selectedProject"
+      :show="showProjectEdit"
+      @update:show="showProjectEdit = $event"
+      @project-updated="handleProjectUpdated"
+    />
   </q-page>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useProjectSearch } from 'src/composables/useProjectSearch'
 import ProjectCard from 'src/components/ProjectCard.vue'
 import ProjectsTopBar from 'src/components/ProjectsTopBar.vue'
+import ProjectDetail from 'src/components/ProjectDetail.vue'
+import ProjectEdit from 'src/components/ProjectEdit.vue'
+import { api } from 'boot/axios'
+import { Notify } from 'quasar'
 
 // Use the search composable
 const {
@@ -153,7 +183,14 @@ const {
   changeSort,
   onPaginationChange,
   addProject,
+  updateProject,
+  removeProject,
 } = useProjectSearch()
+
+// Modal state
+const showProjectDetail = ref(false)
+const showProjectEdit = ref(false)
+const selectedProject = ref(null)
 
 // Options for filters
 const statusOptions = [
@@ -204,6 +241,49 @@ const handleClearSearch = async () => {
 // Handle new project creation
 const handleProjectCreated = (project) => {
   addProject(project)
+}
+
+// Handle project detail view
+const handleViewDetail = (project) => {
+  selectedProject.value = project
+  showProjectDetail.value = true
+}
+
+// Handle project edit
+const handleEditProject = (project) => {
+  selectedProject.value = project
+  showProjectEdit.value = true
+}
+
+// Handle project delete
+const handleDeleteProject = async (project) => {
+  try {
+    await api.delete(`/projects/${project.id}/`)
+
+    Notify.create({
+      type: 'positive',
+      message: 'Project deleted successfully!',
+      icon: 'check_circle',
+      position: 'top',
+    })
+
+    removeProject(project.id)
+  } catch (error) {
+    console.error('Error deleting project:', error)
+
+    Notify.create({
+      type: 'negative',
+      message: error.response?.data?.message || 'Failed to delete project',
+      icon: 'error',
+      position: 'top',
+    })
+  }
+}
+
+// Handle project updated
+const handleProjectUpdated = (updatedProject) => {
+  updateProject(updatedProject)
+  showProjectEdit.value = false
 }
 
 // Load projects on mount
