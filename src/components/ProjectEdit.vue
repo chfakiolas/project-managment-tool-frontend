@@ -37,6 +37,22 @@
             </template>
           </q-input>
 
+          <!-- Project Owner -->
+          <q-select
+            v-model="editData.owner"
+            label="Project Owner *"
+            outlined
+            :options="userOptions"
+            emit-value
+            map-options
+            :rules="[(val) => !!val || 'Owner is required']"
+            :loading="loadingUsers"
+          >
+            <template v-slot:prepend>
+              <q-icon name="person" />
+            </template>
+          </q-select>
+
           <!-- Project Status -->
           <q-select
             v-model="editData.status"
@@ -70,6 +86,27 @@
             </template>
           </q-select>
 
+          <!-- Team Roster -->
+          <div class="q-mt-md">
+            <div class="text-subtitle1 q-mb-sm">Team Roster</div>
+            <q-select
+              v-model="editData.team_roster"
+              label="Team Members"
+              outlined
+              multiple
+              use-chips
+              :options="userOptions"
+              emit-value
+              map-options
+              hint="Select team members for this project"
+              :loading="loadingUsers"
+            >
+              <template v-slot:prepend>
+                <q-icon name="groups" />
+              </template>
+            </q-select>
+          </div>
+
           <div class="row q-mt-md">
             <q-space />
             <q-btn flat label="Cancel" color="grey-7" v-close-popup class="q-mr-sm" />
@@ -88,7 +125,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { api } from 'boot/axios'
 import { Notify } from 'quasar'
 
@@ -106,11 +143,15 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'project-updated'])
 
 const updating = ref(false)
+const loadingUsers = ref(false)
+const userOptions = ref([])
 const editData = ref({
   title: '',
   description: '',
   status: '',
   tags: [],
+  owner: null,
+  team_roster: [],
 })
 
 // Status options
@@ -132,6 +173,27 @@ const tagOptions = ref([
   'Low Priority',
 ])
 
+// Load users from backend
+const loadUsers = async () => {
+  loadingUsers.value = true
+  try {
+    const response = await api.get('/users/')
+    if (response.data && response.data.length > 0) {
+      userOptions.value = response.data.map((user) => ({
+        label: user.username || `${user.first_name} ${user.last_name}`.trim() || `User ${user.id}`,
+        value: user.id,
+      }))
+    } else {
+      userOptions.value = []
+    }
+  } catch {
+    console.warn('Could not load users')
+    userOptions.value = []
+  } finally {
+    loadingUsers.value = false
+  }
+}
+
 // Watch for project changes
 watch(
   () => props.project,
@@ -142,11 +204,18 @@ watch(
         description: newProject.description || '',
         status: newProject.status || 'active',
         tags: newProject.tags || [],
+        owner: newProject.owner || null,
+        team_roster: newProject.team_roster || [],
       }
     }
   },
   { immediate: true },
 )
+
+// Load users on mount
+onMounted(() => {
+  loadUsers()
+})
 
 // Update project
 const updateProject = async () => {

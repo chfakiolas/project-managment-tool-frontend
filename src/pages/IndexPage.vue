@@ -254,7 +254,8 @@ const handleViewDetail = (project) => {
 // Handle project edit
 const handleEditProject = (project) => {
   selectedProject.value = project
-  showProjectEdit.value = true
+  showProjectDetail.value = false // Close detail dialog
+  showProjectEdit.value = true // Open edit dialog
 }
 
 // Handle project delete
