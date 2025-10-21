@@ -1,92 +1,94 @@
 <template>
-  <q-page class="flex q-pa-xl">
+  <q-page class="q-pa-xl">
     <projects-top-bar
       @project-created="handleProjectCreated"
       @search="handleSearch"
       @clear-search="handleClearSearch"
     />
 
-    <!-- Filters -->
-    <div class="col-12 q-mb-md">
-      <q-expansion-item
-        icon="filter_list"
-        label="Filters"
-        class="q-mb-md"
-        :class="{ 'text-primary': hasActiveFilters }"
-      >
-        <div class="q-pa-md">
-          <div class="row q-gutter-md">
-            <!-- Status Filter -->
-            <div class="col-12 col-md-3">
-              <q-select
-                v-model="filters.status"
-                label="Status"
-                outlined
-                clearable
-                :options="statusOptions"
-                emit-value
-                map-options
-                @update:model-value="applyFilters"
-              />
+    <div class="row">
+      <!-- Filters -->
+      <div class="col-12 q-mb-md">
+        <q-expansion-item
+          icon="filter_list"
+          label="Filters"
+          class="q-mb-md"
+          :class="{ 'text-primary': hasActiveFilters }"
+        >
+          <div class="q-pa-md">
+            <div class="row q-gutter-md">
+              <!-- Status Filter -->
+              <div class="col-12 col-md-3">
+                <q-select
+                  v-model="filters.status"
+                  label="Status"
+                  outlined
+                  clearable
+                  :options="statusOptions"
+                  emit-value
+                  map-options
+                  @update:model-value="applyFilters"
+                />
+              </div>
+
+              <!-- Health Filter -->
+              <div class="col-12 col-md-3">
+                <q-select
+                  v-model="filters.health"
+                  label="Health"
+                  outlined
+                  clearable
+                  :options="healthOptions"
+                  emit-value
+                  map-options
+                  @update:model-value="applyFilters"
+                />
+              </div>
+
+              <!-- Tags Filter -->
+              <div class="col-12 col-md-3">
+                <q-select
+                  v-model="filters.tags"
+                  label="Tags"
+                  outlined
+                  clearable
+                  multiple
+                  use-chips
+                  use-input
+                  input-debounce="0"
+                  new-value-mode="add-unique"
+                  :options="tagOptions"
+                  @update:model-value="applyFilters"
+                />
+              </div>
+
+              <!-- Sort Options -->
+              <div class="col-12 col-md-3">
+                <q-select
+                  v-model="sortBy"
+                  label="Sort By"
+                  outlined
+                  :options="sortOptions"
+                  emit-value
+                  map-options
+                  @update:model-value="changeSort"
+                />
+              </div>
             </div>
 
-            <!-- Health Filter -->
-            <div class="col-12 col-md-3">
-              <q-select
-                v-model="filters.health"
-                label="Health"
-                outlined
-                clearable
-                :options="healthOptions"
-                emit-value
-                map-options
-                @update:model-value="applyFilters"
-              />
-            </div>
-
-            <!-- Tags Filter -->
-            <div class="col-12 col-md-3">
-              <q-select
-                v-model="filters.tags"
-                label="Tags"
-                outlined
-                clearable
-                multiple
-                use-chips
-                use-input
-                input-debounce="0"
-                new-value-mode="add-unique"
-                :options="tagOptions"
-                @update:model-value="applyFilters"
-              />
-            </div>
-
-            <!-- Sort Options -->
-            <div class="col-12 col-md-3">
-              <q-select
-                v-model="sortBy"
-                label="Sort By"
-                outlined
-                :options="sortOptions"
-                emit-value
-                map-options
-                @update:model-value="changeSort"
+            <div class="row q-mt-md">
+              <q-space />
+              <q-btn
+                flat
+                label="Clear All Filters"
+                color="grey-7"
+                @click="clearFilters"
+                v-if="hasActiveFilters"
               />
             </div>
           </div>
-
-          <div class="row q-mt-md">
-            <q-space />
-            <q-btn
-              flat
-              label="Clear All Filters"
-              color="grey-7"
-              @click="clearFilters"
-              v-if="hasActiveFilters"
-            />
-          </div>
-        </div>
-      </q-expansion-item>
+        </q-expansion-item>
+      </div>
     </div>
 
     <div class="row">
@@ -97,7 +99,7 @@
       </div>
 
       <!-- Projects Grid -->
-      <div class="col-12 projects-container q-pa-xl" v-else-if="projects.length > 0">
+      <div class="col-12 projects-container" v-else-if="projects.length > 0">
         <project-card
           v-for="project in projects"
           :key="project.id"
