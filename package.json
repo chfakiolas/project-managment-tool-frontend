@@ -2,7 +2,7 @@
   "name": "projects-frontend",
   "version": "0.0.1",
   "description": "Projects frontend for Django",
-  "productName": "Quasar App",
+  "productName": "Project management tool",
   "author": "Chris Fakiolas <fakiolas.ch@gmail.com>",
   "type": "module",
   "private": true,
